@@ -1,0 +1,113 @@
+/* SIM800L ile I2C haberleşme  */
+#include<Wire.h>
+/* 
+ * I2C fonksiyonlarını kullanabilmek için 
+ * Wire.h kütüphanesini projemize ekledik
+ */
+
+#include "SoftwareSerial.h"
+
+SoftwareSerial mySerial(2, 3);
+
+String cmd = "";
+
+ 
+const int SIM800L=0x26;
+/* SIM8000L'nin I2C haberleşme adresi */
+
+int16_t AcX;
+/* SIM800L'den alınacak değerlerin kaydedileceği değişken */
+
+void setup()
+{
+  mySerial.begin(9600);
+  Serial.begin(9600);
+  Serial.println("Initializing...");
+  delay(1000);
+
+  mySerial.println("AT");                 
+  updateSerial();
+  mySerial.println("AT+CMGF=1");          // KONFİGÜRASYON  SMS GÖNDERMEK İÇİN
+  updateSerial();
+  mySerial.println("AT+CNMI=1,2,0,0,0");  // KONFİGÜRASYON  SMS ALMAK İÇİN
+  updateSerial();
+}
+
+void setup(){
+  Wire.begin();
+  Wire.beginTransmission(SIM800L);
+  Wire.write(0x26);
+  Wire.write(0); /* SIM800L çalıştırıldı */
+  Wire.endTransmission(true);
+  /* I2C haberleşmesi başlatıldı ve SIM800L'nin ilk ayarları yapıldı */
+  Serial.begin(9600);
+}
+
+
+void loop()
+{
+  updateSerial();
+}
+
+void loop(){
+  verileriOku();
+  /* SIM800L'den değerler okundu */
+  
+  /* Okunan değerler serial monitör'e yazdırılıyor */
+  Serial.print(" scale = "); Serial.print(AcX);
+  delay(333);
+}
+
+void verileriOku(){
+  Wire.beginTransmission(SIM800L);
+  /* I2C haberleşmesi yapılacak kart seçildi */
+  Wire.write(0x25); 
+  /* 0x3B adresindeki register'a ulaşıldı */
+  Wire.endTransmission(false);
+  Wire.requestFrom(SIM800L,14,true);
+  /* 14 BYTE'lık veri istendi */
+  
+  AcX=Wire.read()<<8|Wire.read();   
+  /* 
+  * Sırası ile okunan her iki byte birleştirilerek sırası ile değişkenlere yazdırıldı
+  * Böylece SIM800L'dEn tüm değerler okunmuş oldu
+  * 0X25 adresi imu değerlerinden ilk sensörün değerine denk gelmektedir.
+  * SIM800L'dEn tüm değerlerin okunabilmesi için bu adresten başlandı
+  */
+}
+
+
+void updateSerial()
+{
+  delay(500);
+  while (Serial.available()) 
+  {
+
+    cmd+=(char)Serial.read();
+ 
+    if(cmd!=""){
+      cmd.trim();  
+      if (cmd.equals("S")) {
+        sendSMS();
+      } else {
+        mySerial.print(cmd);
+        mySerial.println("");
+      }
+    }
+  }
+  
+  while(mySerial.available()) 
+  {
+    Serial.write(mySerial.read());// Alınan Yazılım Serilerinin Seri Bağlantı Noktasına iletilmesi
+  }
+}
+
+void sendSMS(){
+  mySerial.println("AT+CMGF=1");
+  delay(500);
+  mySerial.println("AT+CMGS=\"+639175291539\"\r");
+  delay(500);
+  mySerial.print(AcX);
+  delay(500);
+  mySerial.write(26);
+} 
