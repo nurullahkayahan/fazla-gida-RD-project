@@ -1,0 +1,73 @@
+//HX711 slave code
+
+
+#include <Wire.h>
+/* 
+ * I2C fonksiyonlarını kullanabilmek için 
+ * Wire.h kütüphanesini projemize ekledik
+ */
+#include "HX711.h"
+
+#define calibration_factor -7050.0 //Bu değer, SparkFun_HX711_Calibration taslağı kullanılarak elde edilir. 
+
+#define DOUT  6
+#define CLK  5 
+
+HX711 scale;
+
+void setup()
+{
+  Wire.begin(6);
+  /* I2C haberleşmesi, haberleşme adresi 6 olan bir slave cihaz olarak başlatıldı */
+  Wire.onRequest(istekGeldiginde);
+  /* 
+  Master olan cihaz bu Arduino'dan veri istediğinde gerçekleşecek işlem seçildi
+  */
+{
+  Serial.begin(9600);
+  Serial.println("HX711 scale demo");
+
+  scale.begin(DOUT, CLK);
+  scale.set_scale(calibration_factor); //Bu değer, SparkFun_HX711_Calibration taslağı kullanılarak elde edilir. 
+  scale.tare(); // Başlangıçta terazide ağırlık olmadığını varsayarak, terazi 0'a ayarlanır.
+  Serial.println("Readings:");
+}
+
+
+void loop() {
+  Serial.print("Reading: ");
+  Serial.print(scale.get_units(), 1); //scale.get_units() returns a float
+  Serial.print(" lbs"); 
+  Serial.println();
+}
+
+  Wire.onReceive(veriGeldiginde);
+  /*
+  Master olan cihazdan bu Amplifier'a veri geldiğinde yapılacak işlem seçildi
+  */
+}
+ 
+void loop()
+{
+  /*
+  Tüm işlemler veri isteği geldiğinde veya yeni veri geldiğinde  yapılacağı için loop fonksiyonunun içi boş bırakılmıştır
+  */
+  delay(1);
+}
+ 
+void veriGeldiginde(int veri)
+{
+  /* I2C hattında bu cihaz için yeni veri olduğunda bu fonksiyon çalışır */
+  float  veri;
+  /* Hattaki veri okunarak veri değişkenine kaydedilir */
+  while(Wire.available()){
+    veri = Wire.read();
+  }
+}
+ 
+void istekGeldiginde()
+{
+  /*   buradan  ağırlık verisi yollanıyor 
+  */
+  Wire.write(veri); 
+}
