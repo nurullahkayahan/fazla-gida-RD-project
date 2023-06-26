@@ -1,1 +1,1 @@
-# fazla-g-da-R-D-project
+# fazla-gida-R&D-project
